@@ -1,6 +1,7 @@
 
-Order Book is a simple TypeScript-based trading system simulation built with Express.js. It allows users to place market and limit orders for a single ticker ("Google"), matches bids (buy orders) and asks (sell orders), and manages user balances in USD and stock quantities. This project is intended for educational purposes, demonstrating basic order matching and balance management in a trading system.
-Features
+##Order Book
+It is a simple TypeScript-based trading system simulation built with Express.js. It allows users to place market and limit orders for a single ticker ("Google"), matches bids (buy orders) and asks (sell orders), and manages user balances in USD and stock quantities. This project is intended for educational purposes, demonstrating basic order matching and balance management in a trading system.
+##Features
 Place market and limit orders (buy/sell)
 Automatic order matching based on price and quantity
 View the current order book depth (bids and asks)
@@ -15,7 +16,7 @@ Installation
 Follow these steps to set up the project locally:
 Clone the repository:
 bash
-git clone https://github.com/your-username/order-book.git
+git clone https://github.com/Avijain15/Trading-Order-Book.git
 Navigate to the project directory:
 bash
 cd order-book
