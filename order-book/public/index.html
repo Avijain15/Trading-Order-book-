@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Order Book</title>
+  <style>
+    table { border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid black; padding: 5px; text-align: right; }
+    h2 { margin: 10px 0; }
+    form { margin-bottom: 20px; }
+    label { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Order Book</h1>
+  <div id="orderbook">
+    <h2>Bids (Buy Orders)</h2>
+    <table id="bids"><tr><th>Price</th><th>Quantity</th></tr></table>
+    <h2>Asks (Sell Orders)</h2>
+    <table id="asks"><tr><th>Price</th><th>Quantity</th></tr></table>
+  </div>
+  <button onclick="updateOrderBook()">Refresh Order Book</button>
+
+  <h1>Place Order</h1>
+  <form id="orderForm">
+    <label>Type: <select name="type">
+      <option value="limit">Limit</option>
+      <option value="market">Market</option>
+    </select></label><br>
+    <label>Side: <select name="side">
+      <option value="bid">Buy</option>
+      <option value="ask">Sell</option>
+    </select></label><br>
+    <label>Price: <input type="number" name="price" step="0.01" placeholder="For limit"></label><br>
+    <label>Quantity: <input type="number" name="quantity" step="1" required></label><br>
+    <label>User ID: <input type="text" name="userId" required></label><br>
+    <button type="submit">Place Order</button>
+  </form>
+  <div id="orderResult"></div>
+
+  <h1>User Balances</h1>
+  <label>User ID: <input type="text" id="balanceUserId"></label>
+  <button onclick="updateBalances()">Get Balances</button>
+  <div id="balances"></div>
+
+  <script>
+    const BASE_URL = 'http://localhost:3000';
+    async function updateOrderBook() {
+      const response = await fetch(`${BASE_URL}/depth`);
+      const data = await response.json();
+      const depth = data.depth;
+
+      const bidsTable = document.getElementById('bids');
+      const asksTable = document.getElementById('asks');
+      while (bidsTable.rows.length > 1) bidsTable.deleteRow(1);
+      while (asksTable.rows.length > 1) asksTable.deleteRow(1);
+
+      const bids = Object.entries(depth)
+        .filter(([, info]) => info.type === 'bid')
+        .sort((a, b) => Number(b[0]) - Number(a[0]));
+      for (const [price, info] of bids) {
+        const row = bidsTable.insertRow();
+        row.insertCell().textContent = price;
+        row.insertCell().textContent = info.quantity;
+      }
+
+      const asks = Object.entries(depth)
+        .filter(([, info]) => info.type === 'ask')
+        .sort((a, b) => Number(a[0]) - Number(b[0]));
+      for (const [price, info] of asks) {
+        const row = asksTable.insertRow();
+        row.insertCell().textContent = price;
+        row.insertCell().textContent = info.quantity;
+      }
+    }
+
+    async function placeOrder(event) {
+      event.preventDefault();
+      const form = event.target;
+      const body = {
+        type: form.type.value,
+        side: form.side.value,
+        quantity: parseInt(form.quantity.value),
+        userId: form.userId.value
+      };
+      if (body.type === 'limit') {
+        body.price = parseFloat(form.price.value);
+        if (isNaN(body.price)) {
+          alert('Price required for limit orders');
+          return;
+        }
+      }
+
+      const response = await fetch(`${BASE_URL}/order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await response.json();
+      document.getElementById('orderResult').textContent = response.ok
+        ? `Filled Quantity: ${data.filledQuantity}`
+        : `Error: ${data.error}`;
+      updateOrderBook();
+    }
+
+    async function updateBalances() {
+      const userId = document.getElementById('balanceUserId').value;
+      if (!userId) {
+        alert('Enter a User ID');
+        return;
+      }
+      const response = await fetch(`${BASE_URL}/balance/${userId}`);
+      const data = await response.json();
+      const balances = data.balances;
+      document.getElementById('balances').textContent = `USD: ${balances.USD}, Google: ${balances.Google}`;
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', placeOrder);
+    updateOrderBook();
+  </script>
+</body>
+</html>
